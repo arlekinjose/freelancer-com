@@ -1,3 +1,6 @@
+shopt -s expand_aliases
+alias encrypt="cat /dev/urandom | tr -dc 'a-z' | fold -w 10 | head -n 1"
+
 openssl genrsa -out key.pem 512
 openssl rsa -in key.pem -pubout -out pub.pem
 #Use this command to unecrypt the string
@@ -5,6 +8,8 @@ openssl rsa -in key.pem -pubout -out pub.pem
 
 var1=`cat line.json`
 #var1=`cat $1/line.json`
+
+hashed="[{\"op\":\"`encrypt`\"},{\"mcm\":\"`encrypt`\"},{\"clk\":\"`encrypt`\"},{\"pt\":\"`encrypt`\"},{\"mc\":\"`encrypt`\"},{\"img\":\"`encrypt`\"},{\"id\":\"`encrypt`\"},{\"Tv\":\"`encrypt`\"},{\"marketDefinition\":\"`encrypt`\"},{\"Venue\":\"`encrypt`\"},{\"bspMarket\":\"`encrypt`\"},{\"turnInPlayEnabled\":\"`encrypt`\"},{\"persistenceEnabled\":\"`encrypt`\"},{\"marketBaseRate\":\"`encrypt`\"},{\"eventId\":\"`encrypt`\"},{\"eventTypeId\":\"`encrypt`\"},{\"numberOfWinners\":\"`encrypt`\"},{\"bettingType\":\"`encrypt`\"},{\"marketType\":\"`encrypt`\"},{\"marketTime\":\"`encrypt`\"},{\"suspendTime\":\"`encrypt`\"},{\"bspReconciled\":\"`encrypt`\"},{\"complete\":\"`encrypt`\"},{\"inPlay\":\"`encrypt`\"},{\"crossMatching\":\"`encrypt`\"},{\"runnersVoidable\":\"`encrypt`\"},{\"numberOfActiveRunners\":\"`encrypt`\"},{\"betDelay\":\"`encrypt`\"},{\"status\":\"`encrypt`\"},{\"regulators\":\"`encrypt`\"},{\"discountAllowed\":\"`encrypt`\"},{\"timezone\":\"`encrypt`\"},{\"openDate\":\"`encrypt`\"},{\"version\":\"`encrypt`\"},{\"name\":\"`encrypt`\"},{\"eventName\":\"`encrypt`\"},{\"countryCode\":\"`encrypt`\"},{\"runners\":\"`encrypt`\"},{\"sortPriority\":\"`encrypt`\"},{\"hc\":\"`encrypt`\"},{\"rc\":\"`encrypt`\"},{\"tv\":\"`encrypt`\"},{\"ltp\":\"`encrypt`\"},{\"batb\":\"`encrypt`\"},{\"spb\":\"`encrypt`\"},{\"batl\":\"`encrypt`\"},{\"trd\":\"`encrypt`\"},{\"spf\":\"`encrypt`\"},{\"atb\":\"`encrypt`\"},{\"spl\":\"`encrypt`\"},{\"spn\":\"`encrypt`\"},{\"atl\":\"`encrypt`\"},{\"con\":\"`encrypt`\"}]"
 
 runnerExist=`echo $var1 | jq --compact-output 'try .mc[].marketDefinition.runners[]?'`
 
@@ -46,7 +51,6 @@ then
     encryptName=`echo $marketType | openssl rsautl -encrypt -inkey pub.pem -pubin -in - | base64 -w 0`
     var1=`echo $var1 | jq --compact-output --arg encryptName "$encryptName" '.mc[].marketDefinition.marketType=$encryptName'`
   fi
-fi
 
   name=`echo $var1 | jq --compact-output '.mc[].marketDefinition.name'`
 
@@ -63,5 +67,15 @@ fi
     encryptName=`echo $eventName | openssl rsautl -encrypt -inkey pub.pem -pubin -in - | base64 -w 0`
     var1=`echo $var1 | jq --compact-output --arg encryptName "$encryptName" '.mc[].marketDefinition.eventName=$encryptName'`
   fi
+fi
+
+for k in $(echo $hashed | jq '. | keys | .[]')
+do
+  key=`echo $hashed | jq '.['$k'] | keys' | jq --raw-output '.[]'`
+  value=`echo $hashed | jq --raw-output '.['$k'] | to_entries[] | "\(.value)"'`
+#  echo $key
+#  echo $value
+  var1=`echo $var1 | sed "s,\"$key\"\:,\"$value\"\:,g"`
+done
 
 echo $var1
