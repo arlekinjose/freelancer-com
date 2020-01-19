@@ -16,10 +16,38 @@ countFiles=1
 dir=./$1/*
 for file in $dir
 do
-  totalLines=`wc -l file`
+  totalLines=`wc -l $file | cut -f1 -d' '`
   countLines=1
   while read jsonline; do
     parsedJsonLine=`./parseJsonLine.sh "$jsonline" "$hashed"`
+    
+    if [ $countFiles -eq 1 ] && [ $countLines -eq 1 ]
+    then
+      echo "Concatenating json line number: $countLines of the $countFiles file $file into the file all.json"
+      echo
+      echo "[$parsedJsonLine,"
+      echo
+      echo -n "[$parsedJsonLine," > all.json
+    fi
+
+    if [ $countLines -gt 1 ] && [ $countLines -lt $totalLines ]
+    then
+      echo "Concatenating json line number: $countLines of the $countFiles file $file into the file all.json"
+      echo
+      echo "$parsedJsonLine,"
+      echo
+      echo -n "$parsedJsonLine," >> all.json
+    fi
+
+    if [ $countFiles -eq $totalFiles ] && [ $countLines -eq $totalLines ]
+    then
+      echo "Concatenating json line number: $countLines of the $countFiles file $file into the file all.json"
+      echo
+      echo "$parsedJsonLine]"
+      echo
+      echo -n "$parsedJsonLine]" >> all.json
+    fi
+
     countLines=`expr $countLines + 1`
   done <$file
 countFiles=`expr $countFiles + 1`
